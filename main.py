@@ -64,9 +64,7 @@ def main(args):
         fidelity = timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
     
     # clean up directory
-    os.system("rm *.pyc")
-
-
+    os.system("del *.pyc")
 
 def nloptimize(obj_func, ampmask, phasemask, params, config_file):
     ''' optimize obj_func gate using ampmask and phasemask '''

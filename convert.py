@@ -59,7 +59,7 @@ def convert(param, unit, **kwargs):
         elif (shape == LORENTZIAN):
             return (param*PI)*(H_BAR/(d*DEBYE_TO_CM*PI*1.0e-15))/ARU_ELECTRIC_FIELD
         elif (shape == DICHROMATIC):
-            return (param*PI)*(H_BAR/(d*DEBYE_TO_CM*PI*1.0e-15))/ARU_ELECTRIC_FIELD
+            return (param*PI)*(H_BAR*pow(GAUSSIAN_CONST/PI, 0.5)/(d*DEBYE_TO_CM*pulse_width*1.0e-15)) / ARU_ELECTRIC_FIELD
     elif (unit == ARU_TO_AREA):            # convert from ARU to ELEC (V/m) to pulse area in fraction of PI
         d = kwargs['dipole_moment']                # dipole moment in Debye
         pulse_width = kwargs['pulse_width']              # pulse width in femtoseconds
@@ -73,7 +73,7 @@ def convert(param, unit, **kwargs):
         elif (shape == LORENTZIAN):
             return param * ARU_ELECTRIC_FIELD * (1/PI)*(d*DEBYE_TO_CM*pulse_width*1.0e-15)/(H_BAR)
         elif (shape == DICHROMATIC):
-            return param * ARU_ELECTRIC_FIELD * (1/PI)*(d*DEBYE_TO_CM*pulse_width*1.0e-15)/(H_BAR)
+            return param * ARU_ELECTRIC_FIELD * (1/PI) * (d*DEBYE_TO_CM*pulse_width*1.0e-15)/(H_BAR*pow(GAUSSIAN_CONST/PI, 0.5))
             
         elif (shape != SECH) and (shape != GAUSSIAN) and (shape != SQUARE) and (shape != LORENTZIAN) and (shape != DICHROMATIC):
 	    print "Invalid Pulse shape"

@@ -71,7 +71,7 @@ class PhaseMaskParams(object):
 
 # class to hold pulse parameters
 class PulseParams(object):
-    def __init__(self, pulse_omega_o=None, pulse_detun=None, pulse_width=None, pulse_delay=None, pulse_chirp=None, pulse_shape=None, pulse_pol=None, pulse_phase=None, pulse_area=None, pulse_EO=None, pulse_dipole=None, pulse_xcomp=None, pulse_ycomp=None):
+    def __init__(self, pulse_omega_o=None, pulse_detun=None, pulse_width=None, pulse_delay=None, pulse_chirp=None, pulse_shape=None, pulse_pol=None, pulse_phase=None, pulse_area=None, pulse_EO=None, pulse_dipole=None, pulse_xcomp=None, pulse_ycomp=None, pulse_hole_width=None):
         self.pulse_omega_o = pulse_omega_o
         self.pulse_detun = pulse_detun
         self.pulse_width = pulse_width
@@ -85,6 +85,7 @@ class PulseParams(object):
         self.pulse_dipole = pulse_dipole
         self.pulse_xcomp = pulse_xcomp
         self.pulse_ycomp = pulse_ycomp
+        self.pulse_hole_width = pulse_hole_width
 
 # class to hold quantum dot parameters
 class QDotParams(object):
@@ -413,6 +414,7 @@ def read_config (config_file, configspec_file):
     pulse_phase = config['pulse']['phase']
     pulse_area = config['pulse']['area']
     pulse_dipole = config['pulse']['dipole']
+    pulse_hole_width = config['pulse']['hole_width']
 
     # write parameters to screen if requested
     if dump_to_screen == True:
@@ -424,6 +426,8 @@ def read_config (config_file, configspec_file):
         print "pulse area is:", pulse_area, "PI radians"
         print "pulse polarization is:", pulse_pol
         print "pulse coupling strength is:", pulse_dipole, "Debye\n"
+        if pulse_shape == DICHROMATIC:
+            print "pulse hole width is:", pulse_hole_width, "eV"
 
     # determine unit vector of pulse polarization
     if pulse_pol == POL_H:
@@ -464,7 +468,7 @@ def read_config (config_file, configspec_file):
     elif pulse_shape == LORENTZIAN: 
         pulse_EO = H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
     elif pulse_shape == DICHROMATIC: 
-        pulse_EO = H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
+        pulse_EO = H_BAR*pulse_area*pow(GAUSSIAN_CONST/PI, 0.5)/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
     else:
         print "Invalid Pulse Shape!"
     
@@ -476,9 +480,10 @@ def read_config (config_file, configspec_file):
     pulse_delay = convert(pulse_delay, FEMTO_TO_ARU)    # convert pulse width from fs to ARU
     pulse_EO = convert(pulse_EO, ELEC_TO_ARU)            # convert pulse electric field to ARU
     pulse_chirp = convert(pulse_chirp, FEMTO2_TO_ARU)    # convert pulse chirp from fs^2 to ARU
-
+    pulse_hole_width = convert(pulse_hole_width, EV_TO_ARU) # convert from eV to ARU (spectral hole for dichromatic pulse)
+    
     # write data to PulseParams data structure
-    pulse_params = PulseParams(pulse_omega_o, pulse_detun, pulse_width, pulse_delay, pulse_chirp, pulse_shape, pulse_pol, pulse_phase, pulse_area, pulse_EO, pulse_dipole, pulse_xcomp, pulse_ycomp)
+    pulse_params = PulseParams(pulse_omega_o, pulse_detun, pulse_width, pulse_delay, pulse_chirp, pulse_shape, pulse_pol, pulse_phase, pulse_area, pulse_EO, pulse_dipole, pulse_xcomp, pulse_ycomp,pulse_hole_width)
     
 
     #------------------------------------------------------------#

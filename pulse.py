@@ -28,6 +28,7 @@ class Pulse(object):
         self.omega_o = params['pulse_params'].pulse_omega_o
         self.dipole = params['pulse_params'].pulse_dipole
         self.phase = params['pulse_params'].pulse_phase
+        self.hole_width = params['pulse_params'].pulse_hole_width
         self.t = numpy.linspace(self.t_start, self.t_end, self.array_len, endpoint=False)        # time array
 
         self.omega = 2.0*PI*scipy.fftpack.fftfreq(self.array_len, d=self.t_step)                                # (angular) frequency array
@@ -100,20 +101,18 @@ class Pulse(object):
                 self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
       
         elif self.shape== DICHROMATIC: #Dichromatic pulse with 2meV hole
-            self.efield_envelope=self.E_o*numpy.exp(-2.0*numpy.log(2.0)*pow((self.t-self.t_o), 2.0 )/pow(self.tau, 2.0))-(self.E_o/1.004988)*numpy.exp(-2.0*numpy.log(2.0)*pow((self.t-self.t_o), 2.0 )/(1.01*pow(self.tau, 2.0)))
+            self.efield_envelope = self.E_o*numpy.exp(-2.0*numpy.log(2.0)*pow((self.t-self.t_o), 2.0 )/pow(self.tau, 2.0))
             for i in range(self.array_len):
                 if self.efield_envelope[i] < self.limit:
                     self.efield_envelope[i] = 0.0
             if (self.rwa == True):
-                self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) )
+                self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase))*numpy.cos(self.hole_width*self.t)
             else:
                 self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
 
         # calculate temporal intensity
         self.intensity = numpy.real(pow(abs(self.efield), 2.0))
         
-       
-
     def rabifreq(self, dipole):
         self.efield_envelope = abs(self.efield)
         self.rabi_freq = dipole*self.efield_envelope
