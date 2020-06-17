@@ -1,4 +1,4 @@
-#! /home/ajan/anaconda/bin/python
+#!/usr/bin/python
 # Filename: pulse.py
 
 import matplotlib.pyplot as plt
@@ -39,7 +39,7 @@ class Pulse(object):
         self.E_freq = numpy.zeros((self.array_len), 'complex')    # frequency domain electric field
         self.efield_envelope = numpy.zeros(self.array_len)   # temporal envelope of electric field abs(efield)
         self.intAC = numpy.zeros(self.array_len)  # intensity autocorrelation
-        
+
         # create amplitude mask array - must default to one
         self.amp_mask = numpy.ones(self.array_len)
 
@@ -53,8 +53,6 @@ class Pulse(object):
         self.rwa = params['run_params'].run_rwa
 
         self.limit = 2.0*sys.float_info.epsilon
-        self.length=convert(self.tau,ARU_TO_FEMTO)
-        self.delay_fs=convert(self.t_o,ARU_TO_FEMTO)
 
     def setShape(self):
         '''Sets the shape of the pulse'''
@@ -70,62 +68,21 @@ class Pulse(object):
 
 
         elif self.shape == SECH:
-            self.efield_envelope = self.E_o*(1/numpy.cosh(SECH_CONST*(self.t-self.t_o)/self.tau))
-            if (self.rwa == True):
-                self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) )
-            else:
-                self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
-        
-       
-        elif self.shape == SQUARE:
-            for i in range(self.array_len):
-                if self.t[i]>=(self.t_o-(self.tau/2)) and self.t[i]<=(self.t_o+(self.tau/2)):
-                    self.efield_envelope[i] =self.E_o
-                else:
-                    self.efield_envelope[i] =0.0
-                    
-            if (self.rwa == True):
-                self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) )
-            else:
-                self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
-            
-        elif self.shape== LORENTZIAN:
-            self.efield_envelope=self.E_o*(1/(1+pow((PI*(self.t-self.t_o)/(2*self.tau)),2)))
-            for i in range(self.array_len):
-                if self.efield_envelope[i] < self.limit:
-                    self.efield_envelope[i] = 0.0
-            if (self.rwa == True):
-                self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) )
-            else:
-                self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
-      
-        elif self.shape== DICHROMATIC: #Dichromatic pulse with 2meV hole
-            self.efield_envelope=self.E_o*numpy.exp(-2.0*numpy.log(2.0)*pow((self.t-self.t_o), 2.0 )/pow(self.tau, 2.0))-(self.E_o/1.004988)*numpy.exp(-2.0*numpy.log(2.0)*pow((self.t-self.t_o), 2.0 )/(1.01*pow(self.tau, 2.0)))
-            for i in range(self.array_len):
-                if self.efield_envelope[i] < self.limit:
-                    self.efield_envelope[i] = 0.0
+            self.efield_envelope = self.E_o*(1/cosh(SECH_CONST*(self.t-self.t_o)/self.tau))
             if (self.rwa == True):
                 self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) )
             else:
                 self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
 
+
         # calculate temporal intensity
         self.intensity = numpy.real(pow(abs(self.efield), 2.0))
-        
-       
+
 
     def rabifreq(self, dipole):
         self.efield_envelope = abs(self.efield)
         self.rabi_freq = dipole*self.efield_envelope
-    
-    def detuning(self, omega_o):
-        
-        self.detuning = self.omega-omega_o
-    
-#    def rabifreq(self, dipole,delta):
-#        self.efield_envelope = abs(self.efield)
-#        self.rabi_freq = pow((pow(dipole*self.efield_envelope,2)+pow(delta,2)),0.5)
-        
+
     def fft(self):
         '''Forward FFT of pulse'''
         self.Efield = scipy.fftpack.fft(self.efield)
@@ -139,7 +96,9 @@ class Pulse(object):
     def ifft(self):
         '''Inverse FFT of pulse'''
         self.efield = scipy.fftpack.ifft(self.Efield)
-
+        for i in range(self.array_len):
+            if abs(self.Efield[i]) < self.limit:
+                self.Efield[i] = complex(0.0, 0.0)
         self.intensity = numpy.real(pow(abs(self.efield), 2.0))  # update temporal intensity if efield changes
         self.efield_phase = numpy.angle(self.efield)
         self.inst_freq[0:self.array_len-1] = numpy.diff(numpy.unwrap(self.efield_phase))/numpy.diff(self.t)
@@ -243,7 +202,6 @@ class Pulse(object):
         numpy.savetxt("data/pulse/freq.txt", convert(scipy.fftpack.fftshift(self.omega), ARU_TO_EV))
         numpy.savetxt("data/pulse/efield.txt", self.efield)
         numpy.savetxt("data/pulse/Efield.txt", scipy.fftpack.fftshift(self.Efield))
-#        print numpy.abs(self.intAC).max()
         numpy.savetxt("data/pulse/IntAC.txt", self.intAC/self.intAC.max())
         temp = pow(abs(self.Efield), 2.0)
         numpy.savetxt("data/pulse/Efield_intensity.txt", scipy.fftpack.fftshift(temp))
@@ -251,8 +209,6 @@ class Pulse(object):
         numpy.savetxt("data/pulse/phase.txt", scipy.fftpack.fftshift(self.phase_mask))
         numpy.savetxt("data/pulse/intensity.txt", self.intensity/self.intensity.max())
         numpy.savetxt("data/pulse/rabi_freq.txt", 1000.0*convert(self.rabi_freq, ARU_TO_EV), header='Time dependence of Rabi Frequency (meV)')
-#        print self.detuning,"and",self.rabi_freq
-        numpy.savetxt("data/pulse/detuning.txt", 1000*convert(self.inst_freq - self.omega_o, ARU_TO_EV), header='Time dependence of detuning (meV)')
 
 
 
@@ -265,6 +221,7 @@ class Pulse(object):
                 "AmpMask": scipy.fftpack.fftshift(self.amp_mask), \
                 "PhaseMask": scipy.fftpack.fftshift(self.phase_mask)}
         return pulse_data
+
 
 
 
