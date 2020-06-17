@@ -1,26 +1,21 @@
-#! /home/ajan/anaconda/bin/python
 import sys
 import os
 import sobol_lib
 from scipy import optimize
-import numpy
-import inspect
-
+import random
 
 import laphononeid
 
 from convert import *
 from read_config import *
 from phasemasks import *
-from bloch import *
+from obj_twodot_two_level_dm import *
 from obj_twolevel import *
 from obj_threelevel import *
 from obj_onedot import *
 from obj_twodot import *
 from obj_threedot import *
-from obj_twolevel_dm import *
 from obj_crot import *
-
 
 def main(args):
     # read in config parameters and validate against spec file
@@ -33,12 +28,11 @@ def main(args):
         laphononeid.eidkernel(params)
 
     # choose objective function from objective function dictionaries
-    obj_gates = {'twolevel': obj_twolevel,'twolevel_dm': obj_twolevel_dm, 'threelevel': obj_threelevel, 'onedot': obj_onedot, 'twodot': obj_twodot, 'threedot': obj_threedot, 'crot': obj_crot}
+    obj_gates = {'twodottwoleveldm': obj_twodot_two_level_dm,  'twolevel': obj_twolevel, 'threelevel': obj_threelevel, 'onedot': obj_onedot, 'twodot': obj_twodot, 'threedot': obj_threedot, 'crot': obj_crot}
     obj_func = obj_gates[params['run_params'].gate]
-    
 
     # choose amplitude and phase mask function from the mask function dictionary
-    ampmasks = {'ampmask_chen': chenAmpMask, 'mask_slmcc': slmccAmpMask, 'ampmask_none': noAmpMask, 'dichrome': dichromaticMask}
+    ampmasks = {'ampmask_chen': chenAmpMask, 'mask_slmcc': slmccAmpMask, 'ampmask_none': noAmpMask}
     phasemasks = {'phasemask_cos': cosinePhaseMask, 'phasemask_poly': polyPhaseMask, 'mask_slmcc': slmccPhaseMask, 'phasemask_none': noPhaseMask}
     key = params['run_params'].run_ampmask
     if key in ampmasks:
@@ -50,7 +44,7 @@ def main(args):
         phasemaskfunc = phasemasks[key]
     else:
         print "phase mask not valid"
-    
+
     # read in configuration file and convert parameters to atomic Rhydberg units
     x = read_params(config_file)
     x = convert_aru(x, config_file, TO_ARU)
@@ -62,9 +56,9 @@ def main(args):
         fidelity = timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
     else:
         fidelity = timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
-    
+
     # clean up directory
-    os.system("rm *.pyc")
+    os.system(" rm *.pyc")
 
 
 
@@ -82,22 +76,32 @@ def nloptimize(obj_func, ampmask, phasemask, params, config_file):
     # varaiables to store optimal fidelity and parameter values
     optimal_fidelity = 0.0
     optimal_x = zeros(NOPTS)
+    cons = ({'type': 'ineq', 'fun': lambda x:  x[0] - x_bounds[0][0]},
+            {'type': 'ineq', 'fun': lambda x:  x_bounds[0][1] - x[0]},
+            {'type': 'ineq', 'fun': lambda x:  x[1] - x_bounds[1][0]},
+            {'type': 'ineq', 'fun': lambda x:  x_bounds[1][1] - x[1]},
+            {'type': 'ineq', 'fun': lambda x:  x[2] - x_bounds[2][0]},
+            {'type': 'ineq', 'fun': lambda x:  x_bounds[2][1] - x[2]},
+            {'type': 'ineq', 'fun': lambda x:  x[3] - x_bounds[3][0]},
+            {'type': 'ineq', 'fun': lambda x:  x_bounds[3][1] - x[3]})
 
     # optimize for NITER different initial values
     seed = params['run_params'].sobol_seed   # initialize sobol sequence seed
     run_optimize = True
+    tol = 1.0e-3
     for i in range(NITER):
         # choose random initial values for parameters from allowed phase space
         [ ran_var, seed_out ] = sobol_lib.i4_sobol(NOPTS, seed)  # use sobol sequence to generate NOPT random variables
         seed = seed_out     # update seed for sobol sequence
         for j in range(NOPTS):
+            #ran_var[j] = random.random()
             x_start[j] = (x_bounds[j][1] - x_bounds[j][0])*ran_var[j] + x_bounds[j][0]
 
         # tuple of arguments for the minimization routine - first set of arguments is for the obj_func
         args = ((params, ampmask, phasemask, run_optimize))
 
         # optimize for single instance of x_start, use options={'disp': True} to display more info
-        output = optimize.minimize(obj_func, x_start, args=args, method='SLSQP', bounds=x_bounds, tol=1e-4)
+        output = optimize.minimize(obj_func, x_start, args=args, method='SLSQP', constraints=cons, tol=tol)
         x = output.x
         fidelity = 1 - output.fun
 
@@ -125,12 +129,10 @@ def timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file):
 
     # read in parameters from file and convert to atomic Rhydberg units
     x = read_params(config_file)
-     
     x = convert_aru(x, config_file, TO_ARU)
-    
 
     run_optimize = False
-    
+
     # run objective function for single instance and convert results back to normal units
     data = obj_func(x, params, ampmaskfunc, phasemaskfunc, run_optimize)
     x_converted = convert_aru(x, config_file, FROM_ARU)
@@ -142,13 +144,20 @@ def timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file):
         print "{0} = {1} {2}".format(params['mask_params'].param_list[i], x_converted[i], params['mask_params'].x_units[i])
 
     # save results to the data folder
-    os.system("copy %s %s" % ("config.ini", "data/"))
+    os.system("cp config.ini data/")
     savetxt("data/dynamics/tarray.txt", data["t"])
     if (params['run_params'].gate == 'onedot' or params['run_params'].gate == 'crot'):
         savetxt("data/dynamics/rho_1.txt", data["rho_1"])
         savetxt("data/dynamics/rho0_1.txt", data["rho0_1"])
         savetxt("data/dynamics/rhod_1.txt", data["rhod_1"])
     elif params['run_params'].gate == 'twodot':
+        savetxt("data/dynamics/rho_1.txt", data["rho_1"])
+        savetxt("data/dynamics/rho_2.txt", data["rho_2"])
+        savetxt("data/dynamics/rho0_1.txt", data["rho0_1"])
+        savetxt("data/dynamics/rhod_1.txt", data["rhod_1"])
+        savetxt("data/dynamics/rho0_2.txt", data["rho0_2"])
+        savetxt("data/dynamics/rhod_2.txt", data["rhod_2"])
+    elif params['run_params'].gate == 'twodottwoleveldm':
         savetxt("data/dynamics/rho_1.txt", data["rho_1"])
         savetxt("data/dynamics/rho_2.txt", data["rho_2"])
         savetxt("data/dynamics/rho0_1.txt", data["rho0_1"])
@@ -172,11 +181,13 @@ def timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file):
         resultsfile.write("#Parameter, Value, Units\n")
         for i in range(NOPTS):
             resultsfile.write("%s, %.12f, %s\n" % (params['mask_params'].param_list[i], x_converted[i], params['mask_params'].x_units[i]))
-#        if (params['run_params'].gate == 'onedot' or params['run_params'].gate == 'crot' or params['run_params'].gate == 'twolevel' or params['run_params'].gate == 'threelevel'or params['run_params'].gate == 'twolevel_dm' ):
-#            resultsfile.write("Fidelity, %.12f, arb. units\n" % (data["fidelity"]))
-            
-            
-        if params['run_params'].gate == 'twodot':
+        if (params['run_params'].gate == 'onedot' or params['run_params'].gate == 'crot' or params['run_params'].gate == 'twolevel' or params['run_params'].gate == 'threelevel'):
+            resultsfile.write("Fidelity, %.12f, arb. units\n" % (data["fidelity"]))
+        elif params['run_params'].gate == 'twodot':
+            resultsfile.write("Fidelity DOT 1, %.12f, arb. units\n" % (data["fidelity dot1"]))
+            resultsfile.write("Fidelity DOT 2, %.12f, arb. units\n" % (data["fidelity dot2"]))
+            resultsfile.write("Overall Fidelity, %.12f, arb. units\n" % (data["fidelity"]))
+        elif params['run_params'].gate == 'twodottwoleveldm':
             resultsfile.write("Fidelity DOT 1, %.12f, arb. units\n" % (data["fidelity dot1"]))
             resultsfile.write("Fidelity DOT 2, %.12f, arb. units\n" % (data["fidelity dot2"]))
             resultsfile.write("Overall Fidelity, %.12f, arb. units\n" % (data["fidelity"]))
@@ -185,25 +196,12 @@ def timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file):
             resultsfile.write("Fidelity DOT 2, %.12f, arb. units\n" % (data["fidelity dot2"]))
             resultsfile.write("Fidelity DOT 3, %.12f, arb. units\n" % (data["fidelity dot3"]))
             resultsfile.write("Overall Fidelity, %.12f, arb. units\n" % (data["fidelity"]))
-        else:
-            resultsfile.write("Fidelity, %.12f, arb. units\n" % (data["fidelity"]))
-    
-    
-        
-   
-    if (params['run_params'].gate == 'twolevel'):
-        numpy.savetxt("data/occupation.txt",data["S"][-1],newline=" ")
-#        print "Hey"+str(data["rho_1"][-1,2])    
-    else:
-        numpy.savetxt("data/occupation.txt",data["rho_1"][-1],newline=" ")
-        
 
     return data["fidelity"]
 
 
 if __name__ == "__main__":
-    main(sys.argv)
-    #sys.exit(main(sys.argv))
+    sys.exit(main(sys.argv))
 
 
 

@@ -1,4 +1,3 @@
-#! /home/ajan/anaconda/bin/python
 from constants import *
 from convert import *
 from matmanip import *
@@ -115,10 +114,8 @@ class QDotParams(object):
 
 # class to hold la-phonon eid parameters
 class LAPhononEIDParams(object):
-    def __init__(self, dot_shape=None, omega_c_eid=None, omega_z_eid=None, alpha_eid=None, Omega_start_eid=None, Omega_end_eid=None, Omega_step_eid=None, T_eid=None, read_kernel=None, Omega_eid=None, K_real_eid=None, K_imag_eid=None):
-        self.dot_shape = dot_shape
+    def __init__(self, omega_c_eid=None, alpha_eid=None, Omega_start_eid=None, Omega_end_eid=None, Omega_step_eid=None, T_eid=None, read_kernel=None, Omega_eid=None, K_real_eid=None, K_imag_eid=None):
         self.omega_c_eid = omega_c_eid
-        self.omega_z_eid = omega_z_eid
         self.alpha_eid = alpha_eid
         self.Omega_start_eid = Omega_start_eid
         self.Omega_end_eid = Omega_end_eid
@@ -177,10 +174,17 @@ def read_config (config_file, configspec_file):
     optimize = config['run']['optimize']
     sobol_seed = config['run']['sobol_seed']
     show_plot = config['run']['show_plot']
+    two_level_bool = config['run']['two_level']
 
     if optimize is True and run_mask != run_ampmask and run_mask != run_phasemask:
         sys.exit("The mask does not match the ampmask or the phasemask - fix config file.\nProgram exiting now!")
-
+    if (gate == 'twodottwoleveldm') and (two_level_bool != True):
+        print "Change two_level boolean to True if using twodottwoleveldm mask"
+        quit()
+    elif (gate != 'twodottwoleveldm') and (two_level_bool == True):
+        print "Change two_level boolean to False if not using twodottwoleveldm mask"
+        quit()
+        
     # write parameters to screen if requested
     if dump_to_screen == True:
         print "reading run parameters..."
@@ -301,7 +305,6 @@ def read_config (config_file, configspec_file):
     x_units = []
 
     # read in values and convert to ARU
-    
     for i in range(NOPTS):
         # read in parameters
         x[i] = config['masks'][run_ampmask][param_list[i]]
@@ -409,7 +412,6 @@ def read_config (config_file, configspec_file):
     pulse_chirp = config['pulse']['chirp']
     pulse_shape = config['pulse']['shape']
     pulse_pol = config['pulse']['pol']
-    pol_angle=  config['pulse']['pol_angle']
     pulse_phase = config['pulse']['phase']
     pulse_area = config['pulse']['area']
     pulse_dipole = config['pulse']['dipole']
@@ -444,9 +446,6 @@ def read_config (config_file, configspec_file):
     elif pulse_pol == POL_RCP:
         pulse_xcomp = (1.0/SQRT2)*complex(1.0, 0.0)
         pulse_ycomp = (1.0/SQRT2)*complex(0.0, -1.0)
-    elif pulse_pol == POL_LIN:
-	pulse_xcomp = (1.0)*complex(numpy.cos(pol_angle*PI), 0.0)
-        pulse_ycomp = (1.0)*complex(numpy.sin(pol_angle*PI), 0.0)
     else:
         print "Invalid Pulse Polarization!"
 
@@ -456,18 +455,12 @@ def read_config (config_file, configspec_file):
 
     # determine peak electric field for given pulse shape, pulse width, pulse area, and dipole moment
     if pulse_shape == GAUSSIAN:
-        pulse_EO = H_BAR*pulse_area*pow(GAUSSIAN_CONST/PI, 0.5)/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
+        pulse_EO = H_BAR*pulse_area*pow(GAUSSIAN_CONST/PI, 0.5)/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15);
     elif pulse_shape == SECH:
         pulse_EO = SECH_CONST*H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*PI*pulse_width*1.0e-15)
-    elif pulse_shape == SQUARE:
-        pulse_EO = H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
-    elif pulse_shape == LORENTZIAN: 
-        pulse_EO = H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
-    elif pulse_shape == DICHROMATIC: 
-        pulse_EO = H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
     else:
         print "Invalid Pulse Shape!"
-    
+
 
     # convert pulse pararmeters to Atomic Rydberg Units (ARU)
     pulse_omega_o = convert(pulse_omega_o, EV_TO_ARU)    # convert from eV to ARU (angular frequency)
@@ -479,7 +472,7 @@ def read_config (config_file, configspec_file):
 
     # write data to PulseParams data structure
     pulse_params = PulseParams(pulse_omega_o, pulse_detun, pulse_width, pulse_delay, pulse_chirp, pulse_shape, pulse_pol, pulse_phase, pulse_area, pulse_EO, pulse_dipole, pulse_xcomp, pulse_ycomp)
-    
+
 
     #------------------------------------------------------------#
 
@@ -533,8 +526,10 @@ def read_config (config_file, configspec_file):
     qdot_initial_cx = cmath.rect(initial_state_cx_r, initial_state_cx_phi*PI)
     qdot_initial_cy = cmath.rect(initial_state_cy_r, initial_state_cy_phi*PI)
     qdot_initial_cb = cmath.rect(initial_state_cb_r, initial_state_cb_phi*PI)
-
-    qdot_initial_state = numpy.array([qdot_initial_co, qdot_initial_cx, qdot_initial_cy, qdot_initial_cb], dtype=complex)
+    if config['run']['two_level']:
+        qdot_initial_state = numpy.array([qdot_initial_co, qdot_initial_cy], dtype=complex)
+    else:
+        qdot_initial_state = numpy.array([qdot_initial_co, qdot_initial_cx, qdot_initial_cy, qdot_initial_cb], dtype=complex)
     qdot_initial_state = normalize_state(qdot_initial_state)
 
 
@@ -544,8 +539,12 @@ def read_config (config_file, configspec_file):
     qdot_desired_cy = cmath.rect(desired_state_cy_r, desired_state_cy_phi*PI)
     qdot_desired_cb = cmath.rect(desired_state_cb_r, desired_state_cb_phi*PI)
 
-    qdot_desired_state = numpy.array([qdot_desired_co, qdot_desired_cx, qdot_desired_cy, qdot_desired_cb], dtype=complex)
+    if config['run']['two_level']:
+        qdot_desired_state = numpy.array([qdot_desired_co, qdot_desired_cy], dtype=complex)
+    else:
+        qdot_desired_state = numpy.array([qdot_desired_co, qdot_desired_cx, qdot_desired_cy, qdot_desired_cb], dtype=complex)
     qdot_desired_state = normalize_state(qdot_desired_state)
+
     if dump_to_screen == True:
         print "Initial State for QDOT1 is: {0}".format(qdot_initial_state)
         print "Desired State for QDOT1 is: {0}".format(qdot_desired_state)
@@ -630,7 +629,10 @@ def read_config (config_file, configspec_file):
     qdot2_initial_cy = cmath.rect(initial_state_cy_r, initial_state_cy_phi*PI)
     qdot2_initial_cb = cmath.rect(initial_state_cb_r, initial_state_cb_phi*PI)
 
-    qdot2_initial_state = numpy.array([qdot2_initial_co, qdot2_initial_cx, qdot2_initial_cy, qdot2_initial_cb], dtype=complex)
+    if config['run']['two_level']:
+        qdot2_initial_state = numpy.array([qdot2_initial_co, qdot2_initial_cy], dtype=complex)
+    else:
+        qdot2_initial_state = numpy.array([qdot2_initial_co, qdot2_initial_cx, qdot2_initial_cy, qdot2_initial_cb], dtype=complex)
     qdot2_initial_state = normalize_state(qdot2_initial_state)
 
 
@@ -640,8 +642,12 @@ def read_config (config_file, configspec_file):
     qdot2_desired_cy = cmath.rect(desired_state_cy_r, desired_state_cy_phi*PI)
     qdot2_desired_cb = cmath.rect(desired_state_cb_r, desired_state_cb_phi*PI)
 
-    qdot2_desired_state = numpy.array([qdot2_desired_co, qdot2_desired_cx, qdot2_desired_cy, qdot2_desired_cb], dtype=complex)
+    if config['run']['two_level']:
+        qdot2_desired_state = numpy.array([qdot2_desired_co, qdot2_desired_cy], dtype=complex)
+    else:
+        qdot2_desired_state = numpy.array([qdot2_desired_co, qdot2_desired_cx, qdot2_desired_cy, qdot2_desired_cb], dtype=complex)
     qdot2_desired_state = normalize_state(qdot2_desired_state)
+    
     if dump_to_screen == True:
         print "Initial State for QDOT2 is: {0}".format(qdot2_initial_state)
         print "Desired State for QDOT2 is: {0}".format(qdot2_desired_state)
@@ -724,7 +730,10 @@ def read_config (config_file, configspec_file):
     qdot3_initial_cy = cmath.rect(initial_state_cy_r, initial_state_cy_phi*PI)
     qdot3_initial_cb = cmath.rect(initial_state_cb_r, initial_state_cb_phi*PI)
 
-    qdot3_initial_state = numpy.array([qdot3_initial_co, qdot3_initial_cx, qdot3_initial_cy, qdot3_initial_cb], dtype=complex)
+    if config['run']['two_level']:
+        qdot3_initial_state = numpy.array([qdot3_initial_co, qdot3_initial_cy], dtype=complex)
+    else:
+        qdot3_initial_state = numpy.array([qdot3_initial_co, qdot3_initial_cx, qdot3_initial_cy, qdot3_initial_cb], dtype=complex)
     qdot3_initial_state = normalize_state(qdot3_initial_state)
 
 
@@ -734,8 +743,12 @@ def read_config (config_file, configspec_file):
     qdot3_desired_cy = cmath.rect(desired_state_cy_r, desired_state_cy_phi*PI)
     qdot3_desired_cb = cmath.rect(desired_state_cb_r, desired_state_cb_phi*PI)
 
-    qdot3_desired_state = numpy.array([qdot3_desired_co, qdot3_desired_cx, qdot3_desired_cy, qdot3_desired_cb], dtype=complex)
+    if config['run']['two_level']:
+        qdot3_desired_state = numpy.array([qdot3_desired_co, qdot3_desired_cy], dtype=complex)
+    else:
+        qdot3_desired_state = numpy.array([qdot3_desired_co, qdot3_desired_cx, qdot3_desired_cy, qdot3_desired_cb], dtype=complex)
     qdot3_desired_state = normalize_state(qdot3_desired_state)
+
     if dump_to_screen == True:
         print "Initial State for QDOT3 is: {0}".format(qdot3_initial_state)
         print "Desired State for QDOT3 is: {0}".format(qdot3_desired_state)
@@ -773,9 +786,7 @@ def read_config (config_file, configspec_file):
 
 
     # read la-phonon eid parameters
-    dot_shape = config['laphononeid']['dot_shape']
     omega_c_eid = config['laphononeid']['omega_c_eid']
-    omega_z_eid = config['laphononeid']['omega_z_eid']
     alpha_eid = config['laphononeid']['alpha_eid']
     Omega_start_eid = config['laphononeid']['Omega_start_eid']
     Omega_end_eid = config['laphononeid']['Omega_end_eid']
@@ -796,14 +807,13 @@ def read_config (config_file, configspec_file):
 
     # convert eid pararmeters to Atomic Rydberg Units (ARU)
     omega_c_eid = convert(omega_c_eid, EV_TO_ARU)            # convert from eV to ARU
-    omega_z_eid = convert(omega_z_eid, EV_TO_ARU)             # convert from eV to ARU
     alpha_eid = convert(alpha_eid, PICO2_TO_ARU)                        # convert from ps^2 to ARU
     Omega_start_eid = convert(Omega_start_eid, EV_TO_ARU)                # convert from fs to ARU
     Omega_end_eid = convert(Omega_end_eid, EV_TO_ARU)                # convert from fs to ARU
     Omega_step_eid = convert(Omega_step_eid, EV_TO_ARU)                # convert from fs to ARU
 
     # write data to EIDParams data structure
-    laphononeid_params = LAPhononEIDParams(dot_shape,omega_c_eid, omega_z_eid, alpha_eid, Omega_start_eid, Omega_end_eid, Omega_step_eid, T_eid, read_kernel, None , None)
+    laphononeid_params = LAPhononEIDParams(omega_c_eid, alpha_eid, Omega_start_eid, Omega_end_eid, Omega_step_eid, T_eid, read_kernel, None , None)
 
 
     #------------------------------------------------------------#

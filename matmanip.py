@@ -1,6 +1,33 @@
-#! /home/ajan/anaconda/bin/python
+#!/usr/bin/python
 # Filename: phasemasks.py
 import numpy
+
+def array_to_dmatrix_two_level_dm(rho):
+    rho_oo = 1.0 - rho[0]
+    rho_yy = rho[0]
+    rho_yo = complex(rho[1], rho[2])
+    rho_oy = numpy.conjugate(rho_yo)
+
+    dmatrix = numpy.zeros((2,2), dtype=complex)
+    dmatrix[0,0] = rho_oo
+    dmatrix[1,0] = rho_yo
+    dmatrix[0,1] = rho_oy
+    dmatrix[1,1] = rho_yy
+
+    return dmatrix
+
+def dmatrix_to_array_two_level_dm(dmatrix):
+    rho_oo = dmatrix[0,0]
+    rho_yo = dmatrix[1,0]
+    rho_oy = dmatrix[0,1]
+    rho_yy = dmatrix[1,1]
+
+    rho = numpy.zeros(3)
+    rho[0] = rho_yy.real
+    rho[1] = rho_yo.real
+    rho[2] = rho_yo.imag
+
+    return rho
 
 def array_to_dmatrix(rho):
     rho_oo = rho[0]
