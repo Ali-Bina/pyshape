@@ -1,0 +1,59 @@
+#! /home/ajan/anaconda/bin/python
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar  3 10:05:16 2017
+
+@author: ajan
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt 
+import os
+import glob
+
+#Tl_path="/home/ajan/Documents/pyshape_edited/scripts/power_dependence/results/tuning study/TL/"
+
+#TL_files=glob.glob(Tl_path+"*.txt")
+chirp_files_p=glob.glob("occupation_+300000.0fs2*")
+chirp_files_n=glob.glob("occupation_-300000.0fs2*")
+
+#TL_files.sort()
+chirp_files_p.sort()
+chirp_files_n.sort()
+
+
+#Tl_data=np.zeros([30,len(TL_files)])
+chirp_data_p=np.zeros([30,len(chirp_files_p)])
+chirp_data_n=np.zeros([30,len(chirp_files_n)])
+pulse_area=np.loadtxt(chirp_files_p[0],usecols=(0,),skiprows = 0,)
+wl=[]
+#
+for i in range(len(chirp_files_p)):
+#    Tl_data[:,i]=np.loadtxt(TL_files[i],usecols=(3,),skiprows = 0,)
+    chirp_data_p[:,i]=0.5*(np.loadtxt(chirp_files_p[i],usecols=(3,),skiprows = 0,)+1)
+    chirp_data_n[:,i]=0.5*(np.loadtxt(chirp_files_n[i],usecols=(3,),skiprows = 0,)+1)
+    wl.append(str(chirp_files_p[i].rsplit('_')[2].rstrip("nm.txt")))
+#
+#plt.figure(figsize=(3,25))
+#for j in range(10):
+#    plt.subplot(10,1,j+1)
+#    plt.plot(pulse_area,chirp_data[:,j],label=str(wl[j]))
+#    plt.ylim(0,1.1)
+#    plt.locator_params(nbins=4)
+##    plt.text(3.2,0.5,wl[j],fontsize=8)
+#    plt.legend(loc='best',frameon=False, prop={'size': 8})
+#    plt.tight_layout()
+#plt.show()
+#plt.savefig("chirp_figure.svg")
+plt.figure(figsize=(3,25))
+for j in range(10):
+    plt.subplot(10,1,j+1)
+    plt.plot(pulse_area,chirp_data_p[:,j],label="P300")
+    plt.plot(pulse_area,chirp_data_n[:,j],label="N300")
+    plt.ylim(0,1.1)
+    plt.locator_params(nbins=4)
+    plt.text(0,0.9,wl[j],fontsize=8)
+    plt.legend(loc=4,frameon=False, prop={'size': 8})
+    plt.tight_layout()
+plt.show()
+plt.savefig("chirp_compare.svg")

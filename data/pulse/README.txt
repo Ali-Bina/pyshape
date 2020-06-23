@@ -1,0 +1,12 @@
+# PULSE CHARACTERISTICS
+
+	# TIME DOMAIN DATA
+	time.txt: time steps in fs (1 column)
+	efield.txt: complex electric field (arb. units) - as a function of time (1 column)
+	intensity.txt: temporal intensity (arb. units) - as a function of time (1 column)
+
+	# FREQUENCY DOMAIN DATA
+	freq.txt: frequency steps in eV (from -ve frequencies to +ve frequencies) (1 column)
+	Efield.txt: complex spectral intensity (arb. units) - as a function of freq (1 column)
+	phase.txt: spectral phase (radians) - as a function of freq (1 column)
+

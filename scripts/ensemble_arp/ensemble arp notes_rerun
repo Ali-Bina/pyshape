@@ -1,0 +1,31 @@
+Run omega_0=  arange(1.04107,1.09107,0.002) #25 transition energies
+RUn dipole moments = linspace(20,30,11) #11 dipole moments for every transition energies
+pulse duration 120 fs ?
+
+Pulse area range for each dipole moment 
+r   16  2.56
+r   17  2.72
+r   18  2.88
+r   19  3.04
+x   20  3.2
+x   21  3.36   
+x   22  3.52
+x   23  3.68 
+x   24  3.84
+x   25. 4.0
+x   26  4.16
+x   27  4.32
+x   28  4.48
+x   29  4.64
+x   30  4.8
+r   31  4.96
+r   32  5.12
+r   33  5.28
+r   34  5.44
+add them together to create an ensemble
+weight of each scan is different 
+
+I should make a 2D gaussian grid*lorrentzian and multiple each value with its corresponding value on the 19*26 gaussian grid
+
+lorrentzian fwhm= 4 debye
+gaussian fwhm = 15 meV and 30 meV

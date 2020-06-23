@@ -1,0 +1,5 @@
+omega_z = 1.6 meV
+omega_c = 0.56,0.71,0.9,1.0,1.15,1.3,1.45,1.6 meV
+pshell0_pancake: ran on officepc
+
+runs are not accurate as I forgot to divide alpha_eid by 2 (because 2 from theta integral is part of the numerical integration)

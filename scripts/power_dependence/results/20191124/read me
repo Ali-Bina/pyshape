@@ -1,0 +1,4 @@
+with J(w) implemented with numerical integration for equal confinement in x,y but half the confinement length in z
+def F(theta,omega):
+                return exp(-1*pow(omega,2)*(pow(sin(theta)/self.omega_c_eid,2)+pow(cos(theta)/(2*self.omega_c_eid),2)))*sin(theta) 
+             return self.alpha_eid*pow(Gamma, 3.0)*quad(F,0,PI,args=(Gamma))[0]

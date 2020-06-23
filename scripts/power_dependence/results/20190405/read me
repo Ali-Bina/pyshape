@@ -1,0 +1,6 @@
+testing if creating a laphononeid kernal affects dynamics.or is it just there to plot eid values.
+
+
+occupation_-100000.0fs2_1162.861nm_k2.5.txt     ran with k=2.5 phi"=-100000, tau =100fs with k=2.5 kernel
+occupation_-100000.0fs2_1162.861nm_k1.txt   ran with k=1 phi"=-100000, tau =100fs with k=2.5 kernel           
+occupation_-100000.0fs2_1162.861nm_k1.01.txt ran with k=1 phi"=-100000, tau =100fs with k=1 kernel

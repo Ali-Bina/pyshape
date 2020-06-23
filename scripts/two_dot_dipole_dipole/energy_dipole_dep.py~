@@ -1,0 +1,132 @@
+#!/usr/bin/python
+# Filename: run_script.py
+
+
+import subprocess
+from configobj import ConfigObj
+from validate import Validator
+import cPickle
+import glob				# used to list directory contents
+import os				# used for os dependent functionality
+import operator		# used for sorting lists
+from pylab import *
+import csv
+import asciitable
+
+def clamp(n, minn, maxn):
+    return max(min(maxn, n), minn)
+
+
+folder = "../../"
+os.chdir(folder)
+
+config_file = 'config.ini'
+config = ConfigObj(config_file, configspec='configspec.ini')
+validator = Validator()
+result = config.validate(validator)
+
+data_folder = 'scripts/two_dot_dipole_dipole/'
+
+# define parameters of dot1
+energy_dot_1 = 1.07
+dipole_dot_1 = 24.0
+config['qdot']['omega_yo'] = energy_dot_1
+config['qdot']['d_yo'] = dipole_dot_1
+
+config['qdot']['initial_state_co_r'] = 1.0	# modulus r of state o
+config['qdot']['initial_state_co_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+config['qdot']['initial_state_cy_r'] = 0.0	# modulus r of state o
+config['qdot']['initial_state_cy_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+
+config['qdot']['desired_state_co_r'] = 0.0	# modulus r of state o
+config['qdot']['desired_state_co_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+config['qdot']['desired_state_cy_r'] = 1.0	# modulus r of state o
+config['qdot']['desired_state_cy_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+
+# define parameters of dot2
+omega_yo_dot_2 = 1.07
+d_yo_dot_2 = 24.0
+config['qdot2']['omega_yo'] = omega_yo_dot_2
+config['qdot2']['d_yo'] = d_yo_dot_2
+
+config['qdot2']['initial_state_co_r'] = 1.0	# modulus r of state o
+config['qdot2']['initial_state_co_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+config['qdot2']['initial_state_cy_r'] = 0.0	# modulus r of state o
+config['qdot2']['initial_state_cy_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+
+config['qdot2']['desired_state_co_r'] = 1.0	# modulus r of state o
+config['qdot2']['desired_state_co_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+config['qdot2']['desired_state_cy_r'] = 0.0	# modulus r of state o
+config['qdot2']['desired_state_cy_phi'] = 0.0	# phase phi of state o (as a fraction of PI)
+
+# define pulse parameters
+pulse_omega_o = 1.07
+pulse_dipole = 24.0
+config['pulse']['omega_yo'] = pulse_omega_o
+config['pulse']['d_yo'] = pulse_dipole
+
+config.write()
+
+# make sure NITER is odd to get the value at 0
+NITER_dipole_dot_2 = 3
+# low and high values for parameter to be changed (eV)
+low_dipole_dot_2 = dipole_dot_1 - 2.0
+high_dipole_dot_2 = dipole_dot_1 + 2.0
+dipole_dot_2 = linspace(low_dipole_dot_2, high_dipole_dot_2, num=NITER_dipole_dot_2, endpoint=True)
+
+# make sure NITER is odd to get the value at 0
+NITER_energy_dot_2 = 3
+# low and high values for parameter to be changed (eV)
+low_energy_dot_2 = energy_dot_1 - 0.005
+high_energy_dot_2 = energy_dot_1 + 0.005
+energy_dot_2 = linspace(low_energy_dot_2, high_energy_dot_2, num=NITER_energy_dot_2, endpoint=True)
+
+fidelity = zeros((NITER_dipole_dot_2, NITER_energy_dot_2))
+
+config['run']['optimize'] = 'True'
+config['run']['show_plot'] = 'False'
+config['run']['gate'] = 'twodot'
+
+# save x and y axis values to file
+savetxt(data_folder + 'script_results_axes_dipole_dot_2.txt', transpose(dipole_dot_2), header='Dot 2 dipole (Debye)')
+savetxt(data_folder + 'script_results_axes_energy_dot_2.txt', transpose(energy_dot_2), header='Dot 2 transition energy (eV)')
+savetxt(data_folder + 'script_results.txt', transpose(fidelity), header='Fidelity')
+
+i_initial = 0
+i_final = NITER_dipole_dot_2
+j_initial = 0
+j_final = NITER_energy_dot_2
+
+for i in range(i_initial, i_final):
+	config['qdot2']['d_yo'] = dipole_dot_2[i]
+	for j in range(j_initial, j_final):
+		print i, j
+		config['qdot2']['omega_yo'] = energy_dot_2[j]
+		config.write()
+		subprocess.check_call('python main.py', shell=True)
+
+		t = asciitable.read('data/results.txt', Reader=asciitable.CommentedHeader)
+		# extract results from results.txt
+		a = t['Parameter']
+		fidelity_index = [item for item in range(len(a)) if a[item] == 'Overall Fidelity']
+		fidelity[i, j] = t['Value'][fidelity_index]
+		# save data to file
+		savetxt(data_folder + 'current_iteration.txt', array([i,j]), header='i, j')
+		savetxt(data_folder + 'script_results.txt', transpose(fidelity), header='Fidelity')
+
+config['run']['show_plot'] = 'True'
+config.write()
+
+
+X, Y = meshgrid(1000.0*(energy_dot_2-energy_dot_1), dipole_dot_2-dipole_dot_1)
+contourf(X, Y, fidelity, linspace(0.0, 1.0, 80))
+v = linspace(0.0, 1.0, 11, endpoint=True)
+cbar = colorbar(ticks=v, orientation='horizontal')
+cbar.ax.set_xlabel('Fidelity')
+gca().xaxis.set_major_formatter(FormatStrFormatter('%0.1f'))
+gca().yaxis.set_major_formatter(FormatStrFormatter('%0.1f'))
+xlabel(r'$\Delta\hbar\omega$ (meV)')
+ylabel(r'$\Delta d$ (Debye)')
+show()
+
+
