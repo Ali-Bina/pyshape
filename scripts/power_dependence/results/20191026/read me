@@ -1,0 +1,1 @@
+Run to check what amplitude masks do to pulse area. Applied a gaussian pulse with an amplitude mask which multiplies the intensity by 0.75. 

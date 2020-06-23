@@ -79,7 +79,7 @@ def obj_twodot(x, params, ampmaskfunc, phasemaskfunc, optimize):
         qdot2_rho_end = r_2.integrate(t_end - t_step)
 
     else:
-        t = numpy.linspace(t_start, t_end, array_len, endpoint=True)
+        t = numpy.linspace(t_start, t_end, array_len, endpoint=False)
         rho_1 = numpy.zeros([array_len, 16])
         rho_2 = numpy.zeros([array_len, 16])
 
@@ -132,7 +132,6 @@ def obj_twodot(x, params, ampmaskfunc, phasemaskfunc, optimize):
     # calculate the fidelity for dot 1
     qdot1_final_dmatrix = array_to_dmatrix(qdot1_rho_end)
     fidelity_1 = numpy.trace(numpy.dot(qdot1_final_dmatrix, qdot1_desired_dmatrix)).real
-    
 
     # calculate the fidelity for dot 2
     qdot2_final_dmatrix = array_to_dmatrix(qdot2_rho_end)
@@ -142,7 +141,7 @@ def obj_twodot(x, params, ampmaskfunc, phasemaskfunc, optimize):
     dp_state_physical = numpy.kron(qdot1_final_dmatrix, qdot2_final_dmatrix)
     dp_state_desired = numpy.kron(qdot1_desired_dmatrix, qdot2_desired_dmatrix)
     fidelity = numpy.trace(numpy.dot(dp_state_physical, dp_state_desired)).real
-   
+
     if optimize:
         # prevent pulse area from going negative (not sure why this happens)
         if params['pulse_params'].pulse_EO < params['mask_params'].x_bounds[3][0] or params['pulse_params'].pulse_EO > params['mask_params'].x_bounds[3][1]:

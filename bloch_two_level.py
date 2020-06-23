@@ -307,7 +307,7 @@ class BlochEqns(object):
             dszdt = -Omega*sy - self.gamma_yy*sz
         elif not(self.run_wl_eid or self.run_phonon_eid or self.run_dephasing or self.run_nonmarkovian_eid):
             # no dephasing
-            dsxdt = Delta*syb
+            dsxdt = Delta*sy
             dsydt = -Delta*sx + Omega*sz
             dszdt = -Omega*sy
         elif self.run_nonmarkovian_eid:
@@ -321,8 +321,8 @@ class BlochEqns(object):
             dszdt = -Omega*sy
         else:
             print "CHECK DEPHASING SETTINGS - BLOCH_TWO_LEVEL.PY"
-            dsxdt = -Delta*sy
-            dsydt = Delta*sx + Omega*sz
+            dsxdt = Delta*sy
+            dsydt = -Delta*sx + Omega*sz
             dszdt = -Omega*sy
         dsdt = zeros(3)
         # assign derivatives

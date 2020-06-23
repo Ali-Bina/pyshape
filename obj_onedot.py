@@ -102,7 +102,7 @@ def obj_onedot(x, params, ampmaskfunc, phasemaskfunc, optimize):
             plt.grid(True)
             plt.axis('tight')
             plt.subplot(2,2,3)
-            #pulse.plotEfieldAmp()
+            pulse.plotEfield()
             #pulse.plotrabifreq()
             #plt.xlim(1.0, 1.15)
             plt.subplot(2,2,4)

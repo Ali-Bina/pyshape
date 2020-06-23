@@ -1,0 +1,21 @@
+Run omega_0= arange(1.06107,1.07107,0.001) #11 transition energies
+RUn dipole moments = linspace(12.5,37.5,11) #11 dipole moments for every transition energies
+pulse duration 85 fs 
+
+Pulse area range for each dipole moment 
+x   12.5    2
+x   15  2.4  
+x   17.5    2.8
+x   20. 3.2
+x   22.5    3.6
+x   25. 4.0
+x   27.5    4.4
+x   30.4.8
+x   32.5    5.2
+x   35. 5.6
+x   37.5    6.0
+
+add them together to create an ensemble
+weight of each scan is different 
+
+I should make a 2D gaussian grid and multiple each value with its corresponding value on the 11x11 gaussian grid

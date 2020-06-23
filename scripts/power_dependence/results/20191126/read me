@@ -1,0 +1,3 @@
+testing J(w) with same values for omega_c and omega_z. 
+Note: forgot to accout for the extra 2 that comes from integrating
+sin(theta) from 0 to pi. 

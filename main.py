@@ -60,8 +60,6 @@ def main(args):
     # clean up directory
     os.system(" rm *.pyc")
 
-
-
 def nloptimize(obj_func, ampmask, phasemask, params, config_file):
     ''' optimize obj_func gate using ampmask and phasemask '''
 

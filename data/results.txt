@@ -1,0 +1,6 @@
+#Parameter, Value, Units
+phi_2, 0.000000000000, fs^2
+phi_3, 0.000000000000, fs^3
+phi_4, 0.000000000000, fs^4
+pulse_area, 6.000000000000, PI radians
+Fidelity, 0.126784400286, arb. units

@@ -1,0 +1,8 @@
+phi_alpha = 0.86856131 PI radians
+phi_gamma = 272.26568859 fs
+phi_delta = -0.41148381 PI radians
+pulse_area = 2.03773475 PI radians
+Fidelity DOT 1 = 0.79801528
+Fidelity DOT 2 = 0.99899736
+Fidelity DOT 3 = 0.67689293
+Overall Fidelity = 0.53962930

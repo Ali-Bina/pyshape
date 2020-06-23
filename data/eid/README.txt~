@@ -1,0 +1,7 @@
+# DOT EID CHARACTERISTICS
+
+	Omega_eid.txt: rabi frequency (1 column) (meV)
+	K_real.txt: real part of eid kernel (1 column) (arb. units)
+	K_imag.txt: imag part of eid kernel (1 column) (arb. units)
+
+	plot Omega_eid vs K_real or K_imag
