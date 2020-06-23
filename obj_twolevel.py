@@ -45,16 +45,11 @@ def obj_twolevel(x, params, ampmaskfunc, phasemaskfunc, optimize):
 
     # define initial conditions
     S_0 = state_to_blochvector(params['qdot_params'].qdot_initial_state)
-    dmatrix_0 = 1/2.0 * np.array([[1-S_0[2], S_0[0]-1j*S_0[1]] ,[S_0[0] + 1j*S_0[1], 1+S_0[2]]], dtype=complex)
+    #print S_0
 
-    print "Looky hererere", dmatrix_0
-
-    print "The desired state is ", params['qdot_params'].qdot_desired_state
     desired_S = state_to_blochvector(params['qdot_params'].qdot_desired_state)
     desired_state = blochvector_to_state(desired_S)
     desired_dmatrix = state_to_dmatrix(desired_state)
-    desired_dmatrix = 1/2.0 * np.array([[1-desired_S[2], desired_S[0]-1j*desired_S[1]] ,[desired_S[0] + 1j*desired_S[1], 1+desired_S[2]]], dtype=complex)
-
 
     # integrate bloch equations
     r = ode(bloch.operator)
@@ -63,24 +58,21 @@ def obj_twolevel(x, params, ampmaskfunc, phasemaskfunc, optimize):
 
     # determine number of integration steps
     dt = params['rkdp_params'].rkdp_tdep_step
-    NSTEPS = int(ceil((t_end - t_start)/dt)) + 1
+    NSTEPS = int(ceil((t_end - t_start)/dt))
     dt = (t_end - t_start)/NSTEPS
-    
 
     # integrate the Bloch equations
     if optimize:
         S_end = r.integrate(t_end)
     else:
         t = zeros([NSTEPS])
-        t = linspace(t_start, t_end, NSTEPS, endpoint=True)
         S = zeros([NSTEPS, 3])
         i = 0
-        while r.successful() and r.t < (t[-1]) :
-            i += 1
-            r.integrate(t[i])
+        while r.successful() and r.t < (t_end-dt/10000.0) :
+            r.integrate(r.t + dt)
             S[i,:] = r.y
-        
-
+            t[i] = r.t
+            i =  i + 1
 
         # calculate the fidelity
         S_end = S[-1,:]
@@ -117,13 +109,9 @@ def obj_twolevel(x, params, ampmaskfunc, phasemaskfunc, optimize):
     # calculate the fidelity
     final_state = blochvector_to_state(S_end)
     final_dmatrix = state_to_dmatrix(final_state)
-    print("Final state", final_dmatrix)
-    print '-'*10
-    final_dmatrix = 1/2.0 * np.array([[1-S_end[2], S_end[0]-1j*S_end[1]] ,[S_end[0] + 1j*S_end[1], 1+S_end[2]]], dtype=complex)
-    print("Final state", final_dmatrix)
+
     fidelity = trace(dot(final_dmatrix, desired_dmatrix)).real
-    print '-'*10
-    print("desired state", desired_dmatrix)
+
     if optimize:
         return 1.0 - fidelity
     else:
