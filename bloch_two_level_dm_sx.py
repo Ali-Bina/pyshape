@@ -77,7 +77,7 @@ class BlochEqns(object):
     def operator(self, t, rho):
         '''Returns derivatives of rho at time t'''
         # linear interpolation to find electric field at time t
-        i = numpy.floor((t - self.elec_time[0])/self.dt)
+        i = int(numpy.floor((t - self.elec_time[0])/self.dt))
         efield_real_interp = 0.0
         efield_imag_interp = 0.0
         if t < self.elec_time[-1]:
