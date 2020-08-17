@@ -146,7 +146,7 @@ class NonMarkovianParams(object):
 def read_config (config_file, configspec_file):
 
     # read in configuration file and validate against configspec
-    config = ConfigObj('config.ini', configspec='configspec.ini')
+    config = ConfigObj(config_file, configspec='configspec.ini')
     validator = Validator()
     result = config.validate(validator)
 

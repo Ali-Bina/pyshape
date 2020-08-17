@@ -138,7 +138,8 @@ def obj_twodot_two_level_dm(x, params, ampmaskfunc, phasemaskfunc, optimize):
     dp_state_physical = numpy.kron(qdot1_final_dmatrix, qdot2_final_dmatrix)
     dp_state_desired = numpy.kron(qdot1_desired_dmatrix, qdot2_desired_dmatrix)
     fidelity = numpy.trace(numpy.dot(dp_state_physical, dp_state_desired)).real
-
+    print("Dot1: {}".format(qdot1_final_dmatrix))
+    print("Dot2: {}".format(qdot2_final_dmatrix))
     if optimize:
         return 1.0 - fidelity
     else:

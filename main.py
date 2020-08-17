@@ -20,6 +20,12 @@ from obj_crot import *
 def main(args):
     # read in config parameters and validate against spec file
     config_file = 'config.ini'
+
+    #If provided, take name of config file as parameter
+    if len(sys.argv) > 1:
+
+        config_file = sys.argv[1]
+        
     configspec_file = 'configspec.ini'
     params = read_config(config_file, configspec_file)
 
@@ -53,7 +59,7 @@ def main(args):
     run_optimize = params['run_params'].optimize
     if run_optimize==True:
         x = nloptimize(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
-        fidelity = timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
+        #fidelity = timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
     else:
         fidelity = timedep(obj_func, ampmaskfunc, phasemaskfunc, params, config_file)
 
@@ -86,7 +92,8 @@ def nloptimize(obj_func, ampmask, phasemask, params, config_file):
     # optimize for NITER different initial values
     seed = params['run_params'].sobol_seed   # initialize sobol sequence seed
     run_optimize = True
-    tol = 1.0e-3
+    tol = 1.0e-4
+
     for i in range(NITER):
         # choose random initial values for parameters from allowed phase space
         [ ran_var, seed_out ] = sobol_lib.i4_sobol(NOPTS, seed)  # use sobol sequence to generate NOPT random variables
@@ -99,7 +106,16 @@ def nloptimize(obj_func, ampmask, phasemask, params, config_file):
         args = ((params, ampmask, phasemask, run_optimize))
 
         # optimize for single instance of x_start, use options={'disp': True} to display more info
-        output = optimize.minimize(obj_func, x_start, args=args, method='SLSQP', constraints=cons, tol=tol)
+        #options={'disp':True, 'catol':1e-6, 'rhobeg':0.5}
+        #options={'disp':True, 'maxiter':1000, 'ftol':1e-6}
+        #output = optimize.minimize(obj_func, x_start, args=args, method='SLSQP', constraints=cons, options=options, tol=tol)
+        bounds1 = (x_bounds[0][0], x_bounds[0][1])
+        bounds2 = (x_bounds[1][0], x_bounds[1][1])
+        bounds3 = (x_bounds[2][0], x_bounds[2][1])
+        bounds4 = (x_bounds[3][0], x_bounds[3][1])
+        bounds = [bounds1, bounds2, bounds3, bounds4]
+        output = optimize.differential_evolution(obj_func,args=args, bounds=bounds,maxiter=200, disp=True)
+        #print("The optimized values are: {}\nAnd the fidelity {}".format(output.x, 1 - output.fun))
         x = output.x
         fidelity = 1 - output.fun
 
@@ -107,6 +123,9 @@ def nloptimize(obj_func, ampmask, phasemask, params, config_file):
             optimal_x = x
             optimal_fidelity = fidelity
         print "Iteration {0}, Current Result: {1}, Best Result: {2}".format(i, fidelity, optimal_fidelity)
+        #print("Sobol gave: {}".format(convert_aru(x_start, config_file, FROM_ARU)))
+        #sprint("Optimized Pulse Parameters: {}".format(convert_aru(x, config_file, FROM_ARU)))
+        print("-" * 100)
 
     # convert optimal result to normal units and write to config file
     converted_optimal_x = convert_aru(optimal_x, config_file, FROM_ARU)
