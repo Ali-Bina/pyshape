@@ -459,7 +459,8 @@ def read_config (config_file, configspec_file):
 
     # determine peak electric field for given pulse shape, pulse width, pulse area, and dipole moment
     if pulse_shape == GAUSSIAN:
-        pulse_EO = H_BAR*pulse_area*pow(GAUSSIAN_CONST/PI, 0.5)/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15);
+        pulse_EO = H_BAR*pulse_area*pow(GAUSSIAN_CONST/PI, 0.5)/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
+    
     elif pulse_shape == SECH:
         pulse_EO = SECH_CONST*H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM*PI*pulse_width*1.0e-15)
 

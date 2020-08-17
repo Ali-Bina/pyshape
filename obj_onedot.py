@@ -109,7 +109,7 @@ def obj_onedot(x, params, ampmaskfunc, phasemaskfunc, optimize):
             pulse.plotEfieldPhase()
             #plt.xlim(1.0, 1.15)
             #plt.ylim(-10.0, 10.0)
-            plt.show(block=False)
+            plt.show()
 
         # write pulse data to file
         pulse.intensityAC()
