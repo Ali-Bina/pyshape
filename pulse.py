@@ -1,5 +1,6 @@
 #! /home/ajan/anaconda/bin/python
 # Filename: pulse.py
+# version before fixing rabi freq
 
 import matplotlib.pyplot as plt
 import numpy
@@ -37,6 +38,7 @@ class Pulse(object):
         self.intensity = numpy.zeros(self.array_len)  # temporal intensity of pulse
         self.inst_freq = numpy.zeros(self.array_len)  # temporal intensity of pulse
         self.rabi_freq = numpy.zeros(self.array_len)  # temporal intensity of pulse
+        self.actual_rabi_freq = numpy.zeros(self.array_len) # for writing rabi_freq.txt 
         self.E_freq = numpy.zeros((self.array_len), 'complex')    # frequency domain electric field
         self.efield_envelope = numpy.zeros(self.array_len)   # temporal envelope of electric field abs(efield)
         self.intAC = numpy.zeros(self.array_len)  # intensity autocorrelation
@@ -100,7 +102,7 @@ class Pulse(object):
             else:
                 self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) + numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
       
-        elif self.shape== DICHROMATIC: #Dichromatic pulse with 2meV hole
+        elif self.shape== DICHROMATIC:
             self.efield_envelope = self.E_o*numpy.exp(-2.0*numpy.log(2.0)*pow((self.t-self.t_o), 2.0 )/pow(self.tau, 2.0))
             for i in range(self.array_len):
                 if self.efield_envelope[i] < self.limit:
@@ -113,9 +115,12 @@ class Pulse(object):
         # calculate temporal intensity
         self.intensity = numpy.real(pow(abs(self.efield), 2.0))
         
-    def rabifreq(self, dipole):
+    def rabifreq(self,dipole):
         self.efield_envelope = abs(self.efield)
-        self.rabi_freq = dipole*self.efield_envelope
+        self.rabi_freq = dipole*self.efield_envelope       
+    
+    def actual_rabifreq(self): # for correct rabi output in rabi_freq.txt
+        self.actual_rabi_freq = 0.5*self.dipole*self.efield*(numpy. exp(-1j*self.omega_o*(self.t - self.t_o)))
     
     def detuning(self, omega_o):
         
@@ -237,6 +242,7 @@ class Pulse(object):
         plt.grid(True)
 
     def writePulse(self):
+        self.actual_rabifreq()
         '''Write data to files'''
         numpy.savetxt("data/pulse/time.txt", convert(self.t, ARU_TO_FEMTO))
         numpy.savetxt("data/pulse/freq.txt", convert(scipy.fftpack.fftshift(self.omega), ARU_TO_EV))
@@ -249,7 +255,7 @@ class Pulse(object):
         numpy.savetxt("data/pulse/Efield_phase.txt", scipy.fftpack.fftshift(numpy.unwrap(self.Efield_phase)))
         numpy.savetxt("data/pulse/phase.txt", scipy.fftpack.fftshift(self.phase_mask))
         numpy.savetxt("data/pulse/intensity.txt", self.intensity/self.intensity.max())
-        numpy.savetxt("data/pulse/rabi_freq.txt", 1000.0*convert(self.rabi_freq, ARU_TO_EV), header='Time dependence of Rabi Frequency (meV)')
+        numpy.savetxt("data/pulse/rabi_freq.txt", 1000.0*convert(self.actual_rabi_freq, ARU_TO_EV), header='Time dependence of Rabi Frequency (meV)')
 #        print self.detuning,"and",self.rabi_freq
         numpy.savetxt("data/pulse/detuning.txt", 1000*convert(self.inst_freq - self.omega_o, ARU_TO_EV), header='Time dependence of detuning (meV)')
 
