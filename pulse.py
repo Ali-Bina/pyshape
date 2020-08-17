@@ -68,7 +68,7 @@ class Pulse(object):
                 self.efield = 0.5*self.efield_envelope*( numpy.exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) +  numpy.exp(-1j*self.omega_o*(self.t - self.t_o))*numpy.exp(-1j*self.phase) )
 
 
-        elif self.shape == SECH:=
+        elif self.shape == SECH:
             self.efield_envelope = self.E_o*(1/numpy.cosh(SECH_CONST*(self.t-self.t_o)/self.tau))
             if (self.rwa == True):
                 self.efield = self.efield_envelope*(numpy. exp(1j*self.omega_o*(self.t - self.t_o))*numpy.exp(1j*self.phase) )
