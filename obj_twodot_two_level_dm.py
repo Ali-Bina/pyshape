@@ -118,7 +118,7 @@ def obj_twodot_two_level_dm(x, params, ampmaskfunc, phasemaskfunc, optimize):
             plt.subplot(2,2,3)
             pulse.plotEfieldPhase()
             plt.subplot(2,2,4)
-            pulse.plotrealimagefield()
+            #pulse.plotrealimagefield()
             plt.show()
 
         # write pulse data to file

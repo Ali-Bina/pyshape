@@ -63,6 +63,11 @@ class BlochEqns(object):
         self.efield_inst_freq = zeros(self.array_len)
         #self.efield_inst_freq[0:self.array_len-1] = diff(unwrap(self.efield_phase))/diff(elec_time)
         #self.efield_inst_freq[self.array_len-1] = self.efield_inst_freq[self.array_len-2]
+
+        for i in range(len(self.efield_phase)):
+            if self.efield_phase[i] < 0:
+                self.efield_phase[i] += np.pi * 2
+
         self.efield_inst_freq[0:self.array_len-1] = diff(unwrap(self.efield_phase))/self.dt
         self.efield_inst_freq[self.array_len-1] = self.efield_inst_freq[self.array_len-2]
         #print len(self.efield_inst_freq)
@@ -261,16 +266,17 @@ class BlochEqns(object):
             efield_real_interp = self.elec_field_real[i] + (self.elec_field_real[i+1] - self.elec_field_real[i])*(t-self.elec_time[i])/self.dt
             efield_imag_interp = self.elec_field_imag[i] + (self.elec_field_imag[i+1] - self.elec_field_imag[i])*(t-self.elec_time[i])/self.dt
             inst_freq_interp = self.efield_inst_freq[i] + (self.efield_inst_freq[i+1] - self.efield_inst_freq[i])*(t-self.elec_time[i])/self.dt
-
+        else:
+            inst_freq_interp = self.efield_inst_freq[-1]
         efield_interp = complex(efield_real_interp, efield_imag_interp)
 
         # determine instantaneous Rabi frequencies
         Omega = self.d_yo * abs(efield_interp)
         if Omega == 0.0:
             Omega = sys.float_info.epsilon
-        Delta = self.omega_yo - (self.pulse_omega + 2.0*self.alpha*(t-self.pulse_delay))
+        #Delta = self.omega_yo - (self.pulse_omega + 2.0*self.alpha*(t-self.pulse_delay))
         #Delta1 = Delta
-        #Delta = self.omega_yo - (inst_freq_interp)
+        Delta = self.omega_yo - (inst_freq_interp)
         #print 1000*convert(Delta1, ARU_TO_EV), 1000*convert(Delta, ARU_TO_EV)
         Gamma = pow(Omega**2 + Delta**2, 0.5)
 

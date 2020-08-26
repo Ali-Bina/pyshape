@@ -50,7 +50,30 @@ def convert(param, unit, **kwargs):
         d = kwargs['dipole_moment']
         pulse_width = kwargs['pulse_width']
         shape = kwargs['pulse_shape']
+        ampmask=kwargs['ampmask']
+        pulse_hole_width_mask=kwargs['holeWidthMask']
         if (shape == GAUSSIAN):
+            if ampmask == 'dichrome':
+                
+                def iFTA2(t, delta, E0, tau):
+                    import mpmath as mp
+                    cg = delta
+                    cg1 = E0
+                    cg5 = tau
+                    cg7 = t
+                    return -cg1 * mp.exp(-32 * mp.log(2) ** 3 * cg7 ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2) / cg5 ** 2) * (cg * 4 ** (-cg7 ** 2 * (cg ** 2 * cg5 ** 2 - 16 * mp.log(2) ** 2) / cg5 ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * cg5 - 4 ** (-cg7 ** 2 * cg ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * mp.sqrt(cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2) ** (-0.1e1 / 0.2e1)
+                def integrate(delta, EO, Tau):
+                    from scipy.integrate import quad
+                    import mpmath as mp
+                    import numpy as np
+
+                    g=lambda t: np.abs(iFTA2(t, delta, EO, Tau))
+                    return quad(g, -np.inf, np.inf)[0]
+                pulse_hole_width_mask  *= 1.602e-19 / H_BAR / (2 * PI) *1e15 #hole width in fs
+                A = integrate(pulse_hole_width_mask, 1, pulse_width) / 1e15
+                print "I ran (to EO)", A
+                return H_BAR*(param*PI)/(d*DEBYE_TO_CM)/A
+
             return (param*PI)*(H_BAR*pow(GAUSSIAN_CONST/PI, 0.5)/(d*DEBYE_TO_CM*pulse_width*1.0e-15)) / ARU_ELECTRIC_FIELD
         elif (shape == SECH):
             return (param*PI)*(H_BAR*SECH_CONST/(d*DEBYE_TO_CM*PI*pulse_width*1.0e-15)) / ARU_ELECTRIC_FIELD
@@ -64,7 +87,29 @@ def convert(param, unit, **kwargs):
         d = kwargs['dipole_moment']                # dipole moment in Debye
         pulse_width = kwargs['pulse_width']              # pulse width in femtoseconds
         shape = kwargs['pulse_shape']
+        ampmask=kwargs['ampmask']
+        pulse_hole_width_mask=kwargs['holeWidthMask']
         if (shape == GAUSSIAN):
+            if ampmask == 'dichrome':
+
+                def iFTA2(t, delta, E0, tau):
+                    import mpmath as mp
+                    cg = delta
+                    cg1 = E0
+                    cg5 = tau
+                    cg7 = t
+                    return -cg1 * mp.exp(-32 * mp.log(2) ** 3 * cg7 ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2) / cg5 ** 2) * (cg * 4 ** (-cg7 ** 2 * (cg ** 2 * cg5 ** 2 - 16 * mp.log(2) ** 2) / cg5 ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * cg5 - 4 ** (-cg7 ** 2 * cg ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * mp.sqrt(cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2) ** (-0.1e1 / 0.2e1)
+                def integrate(delta, EO, Tau):
+                    from scipy.integrate import quad
+                    import mpmath as mp
+                    import numpy as np
+
+                    g=lambda t: np.abs(iFTA2(t, delta, EO, Tau))
+                    return quad(g, -np.inf, np.inf)[0]
+                pulse_hole_width_mask  *= 1.602e-19 / H_BAR / (2 * PI) *1e15 #hole width in fs
+                A = integrate(pulse_hole_width_mask, 1, pulse_width) / 1e15
+                return 1/H_BAR*(param*ARU_ELECTRIC_FIELD)*(d*DEBYE_TO_CM)*A/PI
+
             return param * ARU_ELECTRIC_FIELD * (1/PI) * (d*DEBYE_TO_CM*pulse_width*1.0e-15)/(H_BAR*pow(GAUSSIAN_CONST/PI, 0.5))
         elif (shape == SECH):
             return param * ARU_ELECTRIC_FIELD * (1/PI)*(d*DEBYE_TO_CM*PI*pulse_width*1.0e-15)/(SECH_CONST*H_BAR)

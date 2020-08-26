@@ -1,8 +1,6 @@
 #Parameter, Value, Units
-phi_alpha, 0.312000000000, PI radians
-phi_gamma, 235.000000000000, fs
-phi_delta, 0.373000000000, PI radians
-pulse_area, 3.250000000000, PI radians
-Fidelity DOT 1, 0.995018296320, arb. units
-Fidelity DOT 2, 0.999701031170, arb. units
-Overall Fidelity, 0.994720816865, arb. units
+phi_2, 0.000000000000, fs^2
+phi_3, 0.000000000000, fs^3
+phi_4, 0.000000000000, fs^4
+pulse_area, 359954456400.000000000000, PI radians
+Fidelity, 1.000000000000, arb. units

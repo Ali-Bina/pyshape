@@ -1,7 +1,7 @@
 import sys
 import os
 import sobol_lib
-from scipy import optimize
+from scipy import optimize as op
 import random
 
 import laphononeid
@@ -16,7 +16,7 @@ from obj_onedot import *
 from obj_twodot import *
 from obj_threedot import *
 from obj_crot import *
-
+from obj_twolevel_dm import *
 def main(args):
     # read in config parameters and validate against spec file
     config_file = 'config.ini'
@@ -34,11 +34,11 @@ def main(args):
         laphononeid.eidkernel(params)
 
     # choose objective function from objective function dictionaries
-    obj_gates = {'twodottwoleveldm': obj_twodot_two_level_dm,  'twolevel': obj_twolevel, 'threelevel': obj_threelevel, 'onedot': obj_onedot, 'twodot': obj_twodot, 'threedot': obj_threedot, 'crot': obj_crot}
+    obj_gates = {'twodottwoleveldm': obj_twodot_two_level_dm,  'twolevel': obj_twolevel, 'threelevel': obj_threelevel, 'onedot': obj_onedot, 'twodot': obj_twodot, 'threedot': obj_threedot, 'crot': obj_crot, 'twolevel_dm': obj_twolevel_dm}
     obj_func = obj_gates[params['run_params'].gate]
 
     # choose amplitude and phase mask function from the mask function dictionary
-    ampmasks = {'ampmask_chen': chenAmpMask, 'mask_slmcc': slmccAmpMask, 'ampmask_none': noAmpMask}
+    ampmasks = {'ampmask_chen': chenAmpMask, 'mask_slmcc': slmccAmpMask, 'ampmask_none': noAmpMask, 'dichrome': dichromaticMask}
     phasemasks = {'phasemask_cos': cosinePhaseMask, 'phasemask_poly': polyPhaseMask, 'mask_slmcc': slmccPhaseMask, 'phasemask_none': noPhaseMask}
     key = params['run_params'].run_ampmask
     if key in ampmasks:
@@ -114,7 +114,8 @@ def nloptimize(obj_func, ampmask, phasemask, params, config_file):
         bounds3 = (x_bounds[2][0], x_bounds[2][1])
         bounds4 = (x_bounds[3][0], x_bounds[3][1])
         bounds = [bounds1, bounds2, bounds3, bounds4]
-        output = optimize.differential_evolution(obj_func,args=args, bounds=bounds,maxiter=200, disp=True)
+        output = op.differential_evolution(obj_func,args=args, bounds=bounds,maxiter=200, disp=True, workers=-1)
+        
         #print("The optimized values are: {}\nAnd the fidelity {}".format(output.x, 1 - output.fun))
         x = output.x
         fidelity = 1 - output.fun
@@ -122,6 +123,7 @@ def nloptimize(obj_func, ampmask, phasemask, params, config_file):
         if fidelity > optimal_fidelity:
             optimal_x = x
             optimal_fidelity = fidelity
+
         print "Iteration {0}, Current Result: {1}, Best Result: {2}".format(i, fidelity, optimal_fidelity)
         #print("Sobol gave: {}".format(convert_aru(x_start, config_file, FROM_ARU)))
         #sprint("Optimized Pulse Parameters: {}".format(convert_aru(x, config_file, FROM_ARU)))

@@ -6,7 +6,6 @@ from configobj import ConfigObj
 from validate import Validator
 import sys
 import cmath
-
 # class to hold run parameters
 class RunParams(object):
     def __init__(self, run_t_start=None, run_t_end=None, run_t_step=None, run_dephasing=None, run_phonon_eid = None, run_wl_eid = None, run_nonmarkovian_eid=None, run_rwa=None, run_mask=None, run_ampmask=None, run_phasemask=None, NITER=None, gate=None, optimize=None, sobol_seed=None, show_plot=None):
@@ -279,7 +278,10 @@ def read_config (config_file, configspec_file):
             dipole = config['pulse']['dipole']
             width = config['pulse']['width']
             shape = config['pulse']['shape']
-            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape}
+            ampmask=config['run']['ampmask']
+            holeWidthMask=config['masks']['dichrome']['delta']
+            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape, "ampmask":ampmask, 'holeWidthMask':holeWidthMask}
+
         else:
             kwargs = {}
 
@@ -335,7 +337,10 @@ def read_config (config_file, configspec_file):
             dipole = config['pulse']['dipole']
             width = config['pulse']['width']
             shape = config['pulse']['shape']
-            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape}
+            ampmask=config['run']['ampmask']
+            holeWidthMask=config['masks']['dichrome']['delta']
+            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape, "ampmask":ampmask, 'holeWidthMask':holeWidthMask}
+
         else:
             kwargs = {}
 
@@ -391,7 +396,10 @@ def read_config (config_file, configspec_file):
             dipole = config['pulse']['dipole']
             width = config['pulse']['width']
             shape = config['pulse']['shape']
-            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape}
+            ampmask=config['run']['ampmask']
+            holeWidthMask=config['masks']['dichrome']['delta']
+            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape, "ampmask":ampmask, 'holeWidthMask':holeWidthMask}
+
         else:
             kwargs = {}
 
@@ -417,6 +425,7 @@ def read_config (config_file, configspec_file):
     pulse_area = config['pulse']['area']
     pulse_dipole = config['pulse']['dipole']
     pulse_hole_width = config['pulse']['hole_width']
+    pulse_hole_width_mask=config['masks']['dichrome']['delta']
 
     # write parameters to screen if requested
     if dump_to_screen == True:
@@ -459,6 +468,25 @@ def read_config (config_file, configspec_file):
 
     # determine peak electric field for given pulse shape, pulse width, pulse area, and dipole moment
     if pulse_shape == GAUSSIAN:
+        if run_ampmask == "dichrome":
+            def iFTA2(t, delta, E0, tau):
+                import mpmath as mp
+                cg = delta
+                cg1 = E0
+                cg5 = tau
+                cg7 = t
+                return -cg1 * mp.exp(-32 * mp.log(2) ** 3 * cg7 ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2) / cg5 ** 2) * (cg * 4 ** (-cg7 ** 2 * (cg ** 2 * cg5 ** 2 - 16 * mp.log(2) ** 2) / cg5 ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * cg5 - 4 ** (-cg7 ** 2 * cg ** 2 / (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * mp.sqrt(cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2)) * (cg ** 2 * cg5 ** 2 + 16 * mp.log(2) ** 2) ** (-0.1e1 / 0.2e1)
+            def integrate(delta, EO, Tau):
+                from scipy.integrate import quad
+                import mpmath as mp
+                import numpy as np
+
+                g=lambda t: np.abs(iFTA2(t, delta, EO, Tau))
+                return quad(g, -np.inf, np.inf)[0]
+            pulse_hole_width_mask  *= 1.602e-19 / H_BAR / (2 * PI) *1e15 #hole width in fs
+            A = integrate(pulse_hole_width_mask, 1, pulse_width) / 1e15
+            pulse_EO=H_BAR*pulse_area/(pulse_dipole*DEBYE_TO_CM)/A
+            print("In read_config", pulse_EO)
         pulse_EO = H_BAR*pulse_area*pow(GAUSSIAN_CONST/PI, 0.5)/(pulse_dipole*DEBYE_TO_CM*pulse_width*1.0e-15)
     
     elif pulse_shape == SECH:
@@ -924,12 +952,13 @@ def convert_aru(x, config_file, conversion):
             dipole = config['pulse']['dipole']
             width = config['pulse']['width']
             shape = config['pulse']['shape']
-            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape}
+            ampmask=config['run']['ampmask']
+            holeWidthMask=config['masks']['dichrome']['delta']
+            kwargs = {'dipole_moment': dipole, 'pulse_width': width, 'pulse_shape': shape, "ampmask":ampmask, 'holeWidthMask':holeWidthMask}
         else:
             kwargs = {}
         x[i] = convert(x[i], x_convert[i], **kwargs)
 
     return x
-
 
 
